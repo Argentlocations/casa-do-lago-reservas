@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+--db_create="${DB_CREATE:-0}" \
+
 set -Eeuo pipefail
 
 DOCROOT="/var/www/html"
