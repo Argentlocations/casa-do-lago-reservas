@@ -55,3 +55,4 @@ EXPOSE 80
 
 # Não use ENTRYPOINT nem CMD, use direto o apache
 CMD ["apache2-foreground"]
+CMD ["/bin/bash", "-c", "chmod +x /usr/local/bin/docker-entrypoint.sh && /usr/local/bin/docker-entrypoint.sh"]
