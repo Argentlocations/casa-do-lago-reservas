@@ -14,3 +14,15 @@ SetEnv PS_INSTALLATION_FINISHED 1
 
 # Segurança adicional
 Options -Indexes
+
+# Bloqueia completamente a pasta install
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^install(/.*)?$ - [R=404,L]
+</IfModule>
+
+# Alternativa com RedirectMatch
+RedirectMatch 404 ^/install(/.*)?$
+
+# Previne listagem de diretórios
+Options -Indexes
