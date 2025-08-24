@@ -100,12 +100,17 @@ if [ -z "$CONFIG_FILE" ] && [ -f "$DOCROOT/install/index_cli.php" ]; then
     fi
 fi
 
-# PARTE 4: Limpeza de segurança (SEMPRE!)
+# PARTE 4: Limpeza de segurança (APENAS SE JÁ INSTALADO!)
 echo ""
 echo "🧹 Limpeza de segurança..."
-if [ -d "$DOCROOT/install" ]; then
-    rm -rf "$DOCROOT/install"
-    echo "  ✓ Pasta install removida"
+# Só remove install se já estiver instalado com sucesso
+if [ -f "$DOCROOT/app/config/parameters.php" ] || [ -f "$DOCROOT/config/settings.inc.php" ]; then
+    if [ -d "$DOCROOT/install" ]; then
+        rm -rf "$DOCROOT/install"
+        echo "  ✓ Pasta install removida"
+    fi
+else
+    echo "  ℹ Mantendo pasta install para instalação manual"
 fi
 
 if [ -d "$DOCROOT/admin" ] && [ "$ADMIN_DIR" != "admin" ]; then
