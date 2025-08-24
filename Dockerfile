@@ -81,3 +81,6 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["/usr/local/bin/docker-entrypoint.sh"]
+
+RUN echo "DocumentRoot /var/www/html" >> /etc/apache2/sites-available/000-default.conf
+RUN ls -la /var/www/html/
