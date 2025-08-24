@@ -65,6 +65,13 @@ RUN echo '<Directory /var/www/html/>' > /etc/apache2/conf-available/qloapps.conf
     && echo '</Directory>' >> /etc/apache2/conf-available/qloapps.conf \
     && a2enconf qloapps
 
+# IMPORTANTE: Remover ou renomear pasta install
+RUN if [ -d "/var/www/html/install" ]; then \
+      mv /var/www/html/install /var/www/html/install_BACKUP_$(date +%Y%m%d) 2>/dev/null || \
+      rm -rf /var/www/html/install 2>/dev/null || \
+      echo "Install folder will be handled by .htaccess"; \
+    fi
+
 # Expor porta 80
 EXPOSE 80
 
