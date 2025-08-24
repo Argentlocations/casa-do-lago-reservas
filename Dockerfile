@@ -1,5 +1,14 @@
 FROM php:8.1-apache
 
+RUN { \
+  echo 'display_errors = On'; \
+  echo 'error_reporting = E_ALL'; \
+  echo 'log_errors = On'; \
+  echo 'error_log = /dev/stderr'; \
+} > /usr/local/etc/php/conf.d/zz-dev.ini
+RUN printf "ServerName localhost\n" > /etc/apache2/conf-available/servername.conf \
+ && a2enconf servername
+
 RUN apt-get update && apt-get install -y \
     libzip-dev \
     libicu-dev \
@@ -44,9 +53,7 @@ RUN printf '<Directory /var/www/html/>\n\
  && a2enconf qloapps
 
 WORKDIR /var/www/html
-COPY . /var/www/html/
-
-# entrypoint próprio
+# copia o entrypoint e garante permissões + finais de linha corretos
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
     && sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh
@@ -54,5 +61,8 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
 RUN chown -R www-data:www-data /var/www/html
 
 EXPOSE 80
+
+# usa o seu entrypoint e mantém o CMD padrão do Apache
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["apache2-foreground"]
+
