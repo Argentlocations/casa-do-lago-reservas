@@ -1,96 +1,56 @@
---db_create="${DB_CREATE:-0}" \
+#!/bin/bash
+set -e
 
-set -Eeuo pipefail
+echo "=== QloApps Casa do Lago - Iniciando ==="
 
-DOCROOT="/var/www/html"
-DATADIR="/data"
-ADMIN_DIR="${ADMIN_DIR:-admin_lago2024}"
+# Definir diretório de trabalho
+WEBROOT="/var/www/html"
 
-echo "[entrypoint] Iniciando QloApps"
+# Aguardar banco de dados (se necessário)
+if [ -n "$DB_HOST" ]; then
+    echo "Aguardando conexão com banco..."
+    while ! nc -z "$DB_HOST" 3306 2>/dev/null; do
+        sleep 1
+    done
+    echo "✅ Banco conectado"
+fi
 
-# Garante estrutura persistente e faz symlinks para o docroot
-mkdir -p "$DATADIR"/{img,upload,download,modules,themes,var,cache}
-
-create_symlink() {
-  local source="$1"
-  local target="$2"
-
-  if [ ! -L "$target" ]; then
-    if [ -d "$target" ] && [ ! -d "$source" ]; then
-      mkdir -p "$source"
-      cp -a "$target/." "$source/" 2>/dev/null || true
+# Verificar se sistema já foi instalado
+if [ -f "$WEBROOT/config/settings.inc.php" ]; then
+    echo "✅ Sistema instalado - aplicando configurações de produção"
+    
+    # Remover pasta install por segurança
+    if [ -d "$WEBROOT/install" ]; then
+        rm -rf "$WEBROOT/install"
+        echo "✅ Pasta install removida"
     fi
-    rm -rf "$target"
-    ln -s "$source" "$target"
-  fi
-}
-
-for dir in img upload download modules themes var cache; do
-  create_symlink "$DATADIR/$dir" "$DOCROOT/$dir"
-done
-
-# Detecta arquivo de config existente
-CONFIG_FILE=""
-if [ -f "$DOCROOT/app/config/parameters.php" ]; then
-  CONFIG_FILE="$DOCROOT/app/config/parameters.php"
-elif [ -f "$DOCROOT/config/settings.inc.php" ]; then
-  CONFIG_FILE="$DOCROOT/config/settings.inc.php"
-fi
-
-# Instalação não assistida caso ainda não esteja configurado
-if [ -z "$CONFIG_FILE" ] && [ -f "$DOCROOT/install/index_cli.php" ]; then
-  if [ -n "${DB_HOST:-}" ] && [ -n "${DB_NAME:-}" ] && [ -n "${DB_USER:-}" ]; then
-    if [ -z "${APP_DOMAIN:-}" ]; then
-      if [ -n "${RAILWAY_STATIC_URL:-}" ]; then
-        APP_DOMAIN="${RAILWAY_STATIC_URL#https://}"
-        APP_DOMAIN="${APP_DOMAIN#http://}"
-      else
-        APP_DOMAIN="localhost"
-      fi
+    
+    # Renomear pasta admin para segurança (se ainda não foi)
+    if [ -d "$WEBROOT/admin" ]; then
+        ADMIN_NEW="admin$(date +%s | tail -c 6)"
+        mv "$WEBROOT/admin" "$WEBROOT/$ADMIN_NEW"
+        echo "✅ Admin renomeado para: $ADMIN_NEW"
+        echo "💡 Acesse: https://seu-dominio.railway.app/$ADMIN_NEW"
     fi
-
-  
-    php "$DOCROOT/install/index_cli.php" \
-      --domain="$APP_DOMAIN" \
-      --db_server="${DB_HOST}" \
-      --db_name="${DB_NAME}" \
-      --db_user="${DB_USER}" \
-      --db_password="${DB_PASS:-}" \
-      --prefix="${DB_PREFIX:-qlo_}" \
-      --email="${ADMIN_EMAIL:-admin@casadolago.com.br}" \
-      --password="${ADMIN_PASSWORD:-Admin123!}" \
-      --firstname="${ADMIN_FIRSTNAME:-Admin}" \
-      --lastname="${ADMIN_LASTNAME:-Sistema}" \
-      --name="${SITE_NAME:-Casa do Lago}" \
-      --country="${COUNTRY:-br}" \
-      --language="${LANGUAGE:-pt}" \
-      --db_create="${DB_CREATE:-0}" \
-      --newsletter=0 || true
-
-
-  fi
+else
+    echo "⚠️  Primeira execução - mantendo pasta install para configuração"
 fi
 
-# Remove o instalador se já estiver configurado
-if [ -f "$DOCROOT/app/config/parameters.php" ] || [ -f "$DOCROOT/config/settings.inc.php" ]; then
-  rm -rf "$DOCROOT/install" 2>/dev/null || true
-fi
+# Configurar permissões
+echo "Configurando permissões..."
+chown -R www-data:www-data "$WEBROOT"
+find "$WEBROOT" -type d -exec chmod 755 {} \;
+find "$WEBROOT" -type f -exec chmod 644 {} \;
 
-# Renomeia o diretório admin por segurança
-if [ -d "$DOCROOT/admin" ] && [ "$ADMIN_DIR" != "admin" ] && [ ! -d "$DOCROOT/$ADMIN_DIR" ]; then
-  mv "$DOCROOT/admin" "$DOCROOT/$ADMIN_DIR"
-fi
+# Configurações específicas do QloApps
+chmod -R 777 "$WEBROOT/cache" 2>/dev/null || true
+chmod -R 777 "$WEBROOT/log" 2>/dev/null || true
+chmod -R 777 "$WEBROOT/img" 2>/dev/null || true
+chmod -R 777 "$WEBROOT/download" 2>/dev/null || true
+chmod -R 777 "$WEBROOT/upload" 2>/dev/null || true
 
-# Permissões (best-effort)
-chown -R www-data:www-data "$DATADIR" 2>/dev/null || true
-chown -R www-data:www-data "$DOCROOT" 2>/dev/null || true
+echo "✅ Permissões configuradas"
 
-# Porta dinâmica do Railway (se exposta em $PORT)
-if [ -n "${PORT:-}" ]; then
-  sed -i "s/^Listen 80/Listen ${PORT}/" /etc/apache2/ports.conf 2>/dev/null || true
-  sed -i "s#<VirtualHost \*:80>#<VirtualHost *:${PORT}>#" \
-      /etc/apache2/sites-available/000-default.conf 2>/dev/null || true
-fi
-
-# Entrega para o entrypoint oficial do PHP com o CMD passado (apache2-foreground)
-exec docker-php-entrypoint "$@"
+# Iniciar Apache
+echo "🚀 Iniciando servidor Apache..."
+exec apache2-foreground
