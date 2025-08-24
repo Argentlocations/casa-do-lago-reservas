@@ -1,75 +1,61 @@
 FROM php:8.1-apache
 
-# Instalar dependências do sistema
+# Instalar todas as dependências necessárias para QloApps
 RUN apt-get update && apt-get install -y \
-    libicu-dev \
     libzip-dev \
+    libicu-dev \
+    libxml2-dev \
     libpng-dev \
     libjpeg62-turbo-dev \
     libfreetype6-dev \
-    libonig-dev \
-    libxml2-dev \
+    libcurl4-openssl-dev \
     unzip \
     git \
-    && rm -rf /var/lib/apt/lists/*
+ && docker-php-ext-configure gd --with-jpeg --with-freetype \
+ && docker-php-ext-install \
+    pdo_mysql \
+    gd \
+    soap \
+    intl \
+    zip \
+    opcache \
+    curl \
+    mbstring \
+ && a2enmod rewrite headers expires \
+ && rm -rf /var/lib/apt/lists/*
 
-# Configurar e instalar extensões PHP
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-        intl \
-        zip \
-        gd \
-        mbstring \
-        pdo \
-        pdo_mysql \
-        xml \
-        opcache \
-        bcmath
+# Configurações PHP otimizadas para QloApps
+RUN { \
+    echo 'memory_limit = 512M'; \
+    echo 'upload_max_filesize = 32M'; \
+    echo 'post_max_size = 32M'; \
+    echo 'max_execution_time = 500'; \
+    echo 'max_input_time = 500'; \
+    echo 'allow_url_fopen = On'; \
+    echo 'date.timezone = America/Sao_Paulo'; \
+    echo 'opcache.enable = 1'; \
+    echo 'opcache.memory_consumption = 128'; \
+} > /usr/local/etc/php/conf.d/qloapps.ini
 
-# Habilitar módulos Apache necessários
-RUN a2enmod rewrite headers expires deflate
+# Permitir .htaccess funcionar
+RUN printf '<Directory /var/www/html/>\n\
+    Options Indexes FollowSymLinks\n\
+    AllowOverride All\n\
+    Require all granted\n\
+</Directory>\n' > /etc/apache2/conf-available/qloapps.conf \
+ && a2enconf qloapps
 
-# Configurar ServerName para evitar avisos
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
-
-# Copiar configuração PHP personalizada
-COPY _infra/php.ini /usr/local/etc/php/conf.d/custom.ini
-
-# Definir diretório de trabalho
+# Copiar código
 WORKDIR /var/www/html
-
-# Copiar arquivos do projeto
 COPY . /var/www/html/
 
-# Configurar permissões (SIMPLIFICADO)
+# Copiar e preparar o entrypoint
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Ajustar permissões
 RUN chown -R www-data:www-data /var/www/html
 
-# Dar permissões de escrita nas pastas necessárias
-RUN chmod -R 777 /var/www/html/var || true \
-    && chmod -R 777 /var/www/html/img || true \
-    && chmod -R 777 /var/www/html/upload || true \
-    && chmod -R 777 /var/www/html/download || true \
-    && chmod -R 777 /var/www/html/cache || true \
-    && chmod -R 777 /var/www/html/config || true
-
-# Criar diretórios necessários se não existirem
-RUN mkdir -p /var/www/html/var/cache \
-    && mkdir -p /var/www/html/var/logs \
-    && chown -R www-data:www-data /var/www/html/var
-
-# REMOVER PASTA INSTALL
-RUN rm -rf /var/www/html/install
-
-# Configuração Apache para produção
-RUN echo '<Directory /var/www/html/>' > /etc/apache2/conf-available/qloapps.conf \
-    && echo '    Options -Indexes +FollowSymLinks' >> /etc/apache2/conf-available/qloapps.conf \
-    && echo '    AllowOverride All' >> /etc/apache2/conf-available/qloapps.conf \
-    && echo '    Require all granted' >> /etc/apache2/conf-available/qloapps.conf \
-    && echo '</Directory>' >> /etc/apache2/conf-available/qloapps.conf \
-    && a2enconf qloapps
-
-# Expor porta 80
 EXPOSE 80
-
-# Comando para iniciar Apache
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["apache2-foreground"]
