@@ -1,0 +1,16 @@
+# Bloqueia acesso à pasta install
+RedirectMatch 404 ^/install/.*$
+RedirectMatch 404 ^/install_OLD/.*$
+RedirectMatch 404 ^/install$
+
+# Força o QloApps a ignorar verificação de segurança
+SetEnv PS_INSTALL_VERSION 1.7.0.0
+SetEnv PS_INSTALLATION_FINISHED 1
+
+# Permite acesso ao admin mesmo com install presente
+<Files "index.php">
+    SetEnv SKIP_INSTALL_CHECK 1
+</Files>
+
+# Segurança adicional
+Options -Indexes
