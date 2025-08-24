@@ -1,0 +1,49 @@
+# Arquivos de desenvolvimento e documentação
+.git
+.gitignore
+README.md
+readme.txt
+CHANGELOG.md
+CONTRIBUTING.md
+docs/
+documentation/
+
+# Arquivos de teste
+tests/
+test/
+phpunit.xml
+.phpunit.result.cache
+
+# Arquivos temporários do sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+*.tmp
+*.temp
+*.cache
+
+# Arquivos de backup
+*.bak
+*.backup
+*.old
+*~
+
+# Arquivos de IDE e editores
+.vscode/
+.idea/
+*.sublime-*
+*.swp
+*.swo
+
+# Arquivos de desenvolvimento
+node_modules/
+vendor/
+composer.lock
+package-lock.json
+
+# Arquivos comprimidos (já extraímos tudo)
+*.zip
+*.tar
+*.gz
+*.rar
