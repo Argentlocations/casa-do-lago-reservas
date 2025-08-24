@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+!/usr/bin/env bash
 set -euo pipefail
 
 DOCROOT="/var/www/html"
@@ -86,4 +86,4 @@ if [ -n "${PORT:-}" ]; then
         /etc/apache2/sites-available/000-default.conf 2>/dev/null || true
 fi
 
-exec apache2-foreground
+exec apache2-foregroundexec apache2-foreground
