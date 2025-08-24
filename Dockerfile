@@ -1,3 +1,4 @@
+#!/bin/bash
 FROM php:8.1-apache
 
 RUN apt-get update && apt-get install -y \
@@ -47,9 +48,10 @@ WORKDIR /var/www/html
 COPY . /var/www/html/
 
 COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod 755 /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 RUN chown -R www-data:www-data /var/www/html
 
 EXPOSE 80
-ENTRYPOINT ["/bin/bash"]
-CMD ["/usr/local/bin/docker-entrypoint.sh"]
+
+# Não use ENTRYPOINT nem CMD, use direto o apache
+CMD ["apache2-foreground"]
