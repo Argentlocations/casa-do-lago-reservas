@@ -47,9 +47,9 @@ WORKDIR /var/www/html
 COPY . /var/www/html/
 
 COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
+RUN chmod 755 /usr/local/bin/docker-entrypoint.sh
 RUN chown -R www-data:www-data /var/www/html
 
 EXPOSE 80
+ENTRYPOINT ["/bin/bash"]
 CMD ["/usr/local/bin/docker-entrypoint.sh"]
