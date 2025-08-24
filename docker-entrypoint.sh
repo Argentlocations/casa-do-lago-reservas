@@ -49,6 +49,7 @@ if [ -z "$CONFIG_FILE" ] && [ -f "$DOCROOT/install/index_cli.php" ]; then
       fi
     fi
 
+  
     php "$DOCROOT/install/index_cli.php" \
       --domain="$APP_DOMAIN" \
       --db_server="${DB_HOST}" \
@@ -63,8 +64,10 @@ if [ -z "$CONFIG_FILE" ] && [ -f "$DOCROOT/install/index_cli.php" ]; then
       --name="${SITE_NAME:-Casa do Lago}" \
       --country="${COUNTRY:-br}" \
       --language="${LANGUAGE:-pt}" \
-      --db_create=0 \
+      --db_create="${DB_CREATE:-0}" \
       --newsletter=0 || true
+
+
   fi
 fi
 
