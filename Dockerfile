@@ -1,4 +1,3 @@
-!/bin/bash
 FROM php:8.1-apache
 
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
