@@ -41,21 +41,24 @@ WORKDIR /var/www/html
 # Copiar arquivos do projeto
 COPY . /var/www/html/
 
-# Configurar permissões corretas
-RUN chown -R www-data:www-data /var/www/html \
-    && find /var/www/html -type d -exec chmod 755 {} \; \
-    && find /var/www/html -type f -exec chmod 644 {} \; \
-    && chmod -R 777 /var/www/html/var \
-    && chmod -R 777 /var/www/html/img \
-    && chmod -R 777 /var/www/html/upload \
-    && chmod -R 777 /var/www/html/download \
-    && chmod -R 777 /var/www/html/cache \
-    && chmod -R 777 /var/www/html/config
+# Configurar permissões (SIMPLIFICADO)
+RUN chown -R www-data:www-data /var/www/html
+
+# Dar permissões de escrita nas pastas necessárias
+RUN chmod -R 777 /var/www/html/var || true \
+    && chmod -R 777 /var/www/html/img || true \
+    && chmod -R 777 /var/www/html/upload || true \
+    && chmod -R 777 /var/www/html/download || true \
+    && chmod -R 777 /var/www/html/cache || true \
+    && chmod -R 777 /var/www/html/config || true
 
 # Criar diretórios necessários se não existirem
 RUN mkdir -p /var/www/html/var/cache \
     && mkdir -p /var/www/html/var/logs \
     && chown -R www-data:www-data /var/www/html/var
+
+# REMOVER PASTA INSTALL
+RUN rm -rf /var/www/html/install
 
 # Configuração Apache para produção
 RUN echo '<Directory /var/www/html/>' > /etc/apache2/conf-available/qloapps.conf \
@@ -64,13 +67,6 @@ RUN echo '<Directory /var/www/html/>' > /etc/apache2/conf-available/qloapps.conf
     && echo '    Require all granted' >> /etc/apache2/conf-available/qloapps.conf \
     && echo '</Directory>' >> /etc/apache2/conf-available/qloapps.conf \
     && a2enconf qloapps
-
-# IMPORTANTE: Remover ou renomear pasta install
-RUN if [ -d "/var/www/html/install" ]; then \
-      mv /var/www/html/install /var/www/html/install_BACKUP_$(date +%Y%m%d) 2>/dev/null || \
-      rm -rf /var/www/html/install 2>/dev/null || \
-      echo "Install folder will be handled by .htaccess"; \
-    fi
 
 # Expor porta 80
 EXPOSE 80
