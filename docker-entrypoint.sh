@@ -2,14 +2,22 @@
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] QloApps: $1"
 }
-
 log "Iniciando configuracao do QloApps..."
 
-# IMPORTANTE: Remover pasta install por seguranca
-if [ -d "/var/www/html/install" ]; then
-    log "Removendo pasta install..."
-    rm -rf /var/www/html/install
-    log "Pasta install removida com sucesso"
+# VERIFICAR SE QLOAPPS JÁ ESTÁ INSTALADO
+if [ -f "/var/www/html/config/settings.inc.php" ]; then
+    # QloApps está instalado - podemos remover install com segurança
+    if [ -d "/var/www/html/install" ]; then
+        log "QloApps já instalado. Removendo pasta install por seguranca..."
+        rm -rf /var/www/html/install
+        log "Pasta install removida com sucesso"
+    fi
+else
+    # QloApps NÃO está instalado - precisamos manter a pasta install
+    log "Primeira instalacao detectada - mantendo pasta install..."
+    if [ ! -d "/var/www/html/install" ]; then
+        log "AVISO: Pasta install necessaria mas nao encontrada!"
+    fi
 fi
 
 # Renomear pasta admin para admin_140350
