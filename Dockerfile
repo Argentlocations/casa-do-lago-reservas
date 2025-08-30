@@ -33,3 +33,4 @@ RUN chmod +x /docker-entrypoint.sh
 EXPOSE 80
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["apache2-foreground"]
+# Build timestamp: 1756575025
